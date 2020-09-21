@@ -15,6 +15,7 @@ namespace Registro
         //static bool resultado;
         static void Main(string[] args)
         {
+            //fileName = "Datos.csv";
             fileName = args[0];
             ValidateFile(fileName);
             ProgramEngine(true);
@@ -25,12 +26,13 @@ namespace Registro
             string answer;
             while (state)
             {
-                Console.WriteLine("**************************");
-                Console.WriteLine("Bienvenidos a la Registro_v2");
-                Console.WriteLine("**************************\n");
+                Console.WriteLine("***************************");
+                Console.WriteLine("Bienvenidos a la Registro_v3");
+                Console.WriteLine("***************************\n");
                 Console.WriteLine("(C)rear");
                 Console.WriteLine("(L)lista");
                 Console.WriteLine("(B)Buscar");
+                Console.WriteLine("(E)ditar");
                 Console.WriteLine("(D)elete");
                 Console.WriteLine("(S)alir");
                 Console.Write("Introduzca una opcion: ");
@@ -48,10 +50,11 @@ namespace Registro
                         string cedula = Console.ReadLine();
                         SearchPerson(true, cedula);
                         break;
+                    case 'e':
+                        Editar();
+                        break;
                     case 'd':
-                        Console.WriteLine("Introduzca cedula de la persona: ");
-                        string cedulaBorrar = Console.ReadLine();
-                        DeletePerson(cedulaBorrar);
+                        DeletePerson();
                         break;
                     case 's':
                         state = false;
@@ -73,11 +76,126 @@ namespace Registro
 
 
         }
-
-        private static void DeletePerson(string cedulaBorrar)
+        private static void Editar()
         {
-            throw new NotImplementedException();
+
+            bool resultado;
+            string answer;
+            Console.WriteLine("Introduzca la cédula de la persona que desea editar: ");
+            string cedulaEditar = Console.ReadLine();
+            List<Persona> myList = new List<Persona>();
+            string text = System.IO.File.ReadAllText(fileName);
+            string[] line = text.Split("\n");
+
+            for (int i = 1; i < line.Length - 1; i++)
+            {
+                Persona persona = new Persona();
+                string[] personaValue = line[i].Split(",");
+                persona.Cedula = personaValue[0];
+                persona.Nombre = personaValue[1];
+                persona.Apellido = personaValue[2];
+                persona.Edad = int.Parse(personaValue[3]);
+                myList.Add(persona);
+
+            }
+            int editingIndex = myList.FindIndex(p => p.Cedula == cedulaEditar);
+            persona = myList.Find(p => p.Cedula == cedulaEditar);
+            PropertyInfo[] properties = typeof(Persona).GetProperties();
+            foreach (PropertyInfo property in properties)
+            {
+                Console.Write($"\t{property.Name}: ");
+                string myValue = Console.ReadLine();
+                if (property.Name == "Edad")
+                {
+                    int myValueToInt = int.Parse(myValue);
+                    property.SetValue(persona, myValueToInt);
+                }
+                else
+                {
+                    property.SetValue(persona, myValue);
+                }
+            }
+
+            Console.Write("Desea guardar, y/n? ");
+            answer = Console.ReadLine();
+            resultado = ValidateAnswer(answer, "Desea guardar y/n? ");
+
+            if (resultado)
+            {
+                myList[editingIndex] = persona;
+                using (var fileStream = new FileStream(fileName, FileMode.Create))
+                {
+                    AddText(fileStream, "Cedula,");
+                    AddText(fileStream, "Nombre,");
+                    AddText(fileStream, "Apellido,");
+                    AddText(fileStream, "Edad\n");
+                }
+                foreach (Persona persona in myList)
+                {
+                    SavePersonToCsv(persona);
+                }
+            }
         }
+
+        private static void DeletePerson()
+        {
+            string answer;
+            bool state = true;
+            List<Persona> myList = new List<Persona>();
+            string text = System.IO.File.ReadAllText(fileName);
+            string[] line = text.Split("\n");
+            for (int i = 1; i < line.Length - 1; i++)
+            {
+                Persona persona = new Persona();
+                string[] personaValue = line[i].Split(",");
+                persona.Cedula = personaValue[0];
+                persona.Nombre = personaValue[1];
+                persona.Apellido = personaValue[2];
+                persona.Edad = int.Parse(personaValue[3]);
+                myList.Add(persona);
+
+            }
+            while (state)
+            {
+                Console.Write("Introduzca cédula de la persona que desea borra: ");
+                string cedulaBorrar = Console.ReadLine();
+                if (myList.Exists(p => p.Cedula == cedulaBorrar))
+                {
+                    persona = myList.Find(p => p.Cedula == cedulaBorrar);
+                    Console.WriteLine("esta seguro que desea borrar a");
+                    Console.WriteLine($"{persona.Cedula}, {persona.Nombre}, {persona.Apellido}, {persona.Edad}");
+                    answer = Console.ReadLine();
+                    if (answer[0] == 'y')
+                    {
+                        myList.Remove(persona);
+                        using (var fileStream = new FileStream(fileName, FileMode.Create))
+                        {
+                            AddText(fileStream, "Cedula,");
+                            AddText(fileStream, "Nombre,");
+                            AddText(fileStream, "Apellido,");
+                            AddText(fileStream, "Edad,\n");
+                        }
+                        foreach (var persona in myList)
+                        {
+                            SavePersonToCsv(persona);
+                        }
+                        Console.WriteLine("Proceso de borrado completado exitosamente");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"No se encontro {cedulaBorrar}");
+                    Console.WriteLine("Desea volver a intentar y/n");
+                    answer = Console.ReadLine();
+                    state = ValidateAnswer(answer, "Desea continuar y/n?");
+                }
+            }
+
+
+        }
+
+
+
 
         private static void SearchPerson(bool status, string cedula)
         {
@@ -95,13 +213,13 @@ namespace Registro
                 persona.Edad = int.Parse(personaValue[3]);
                 myList.Add(persona);
             }
-            
+
             while (status)
             {
                 if (myList.Exists(p => p.Cedula == cedula))
                 {
                     persona = myList.Find(p => p.Cedula == cedula);
-                    
+
                     Console.WriteLine($"{persona.Cedula}, {persona.Nombre}, {persona.Apellido}, {persona.Edad}");
                     Console.WriteLine("Desea Continuar y/n");
                     answer = Console.ReadLine();
@@ -113,7 +231,7 @@ namespace Registro
                     Console.WriteLine("La persona no existe");
                     Console.WriteLine("Desea volver a intentar y/n:");
                     answer = Console.ReadLine();
-                    if(answer[0] == 'y')
+                    if (answer[0] == 'y')
                     {
                         Console.Write("Intruzca la cedula: ");
                         cedula = Console.ReadLine();
@@ -124,9 +242,9 @@ namespace Registro
                     }
 
                 }
-                
+
             }
-           
+
 
 
 
