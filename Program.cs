@@ -15,8 +15,8 @@ namespace Registro
         //static bool resultado;
         static void Main(string[] args)
         {
-            //fileName = "Datos.csv";
-            fileName = args[0];
+            fileName = "Datos.csv";
+            //fileName = args[0];
             ValidateFile(fileName);
             ProgramEngine(true);
         }
@@ -191,11 +191,7 @@ namespace Registro
                 }
             }
 
-
         }
-
-
-
 
         private static void SearchPerson(bool status, string cedula)
         {
@@ -245,12 +241,6 @@ namespace Registro
 
             }
 
-
-
-
-
-
-
         }
 
         private static void GetList(bool state)
@@ -269,11 +259,13 @@ namespace Registro
                     persona.Nombre = personaValue[1];
                     persona.Apellido = personaValue[2];
                     persona.Edad = int.Parse(personaValue[3]);
+                    persona.Password = personaValue[4];
                     myList.Add(persona);
                 }
+                Console.WriteLine("Cedula, Nombre, Apellido, Edad, Contraseña");
                 foreach (var persona in myList)
                 {
-                    Console.WriteLine($"{persona.Cedula}, {persona.Nombre}, {persona.Apellido}, {persona.Edad}");
+                    Console.WriteLine($"{persona.Cedula}, {persona.Nombre}, {persona.Apellido}, {persona.Edad}, {persona.Password}");
                 }
                 Console.WriteLine("Desea continuar y/n");
                 answer = Console.ReadLine();
@@ -291,17 +283,67 @@ namespace Registro
                 PropertyInfo[] properties = typeof(Persona).GetProperties();
                 foreach (PropertyInfo property in properties)
                 {
-                    Console.Write($"\t{property.Name}: ");
-                    string myValue = Console.ReadLine();
+                    if (property.Name == "Cedula")
+                    {
+                        Console.Write($"\t{property.Name}: ");
+                        property.SetValue(persona, Validators.cedula());
+                        Console.Write("\n");
+                    }
+                    //string myValue = Console.ReadLine();
+                    if (property.Name == "Nombre")
+                    {
+                        Console.Write($"\t{property.Name}: ");
+                        property.SetValue(persona, Validators.name());
+                        Console.Write("\n");
+                    }
+                    if (property.Name == "Apellido")
+                    {
+                        Console.Write($"\t{property.Name}: ");
+                        property.SetValue(persona, Validators.apellido());
+                        Console.Write("\n");
+                    }
                     if (property.Name == "Edad")
                     {
-                        int myValueToInt = int.Parse(myValue);
+                        Console.Write($"\t{property.Name}: ");
+                        int myValueToInt = int.Parse(Validators.edad());
                         property.SetValue(persona, myValueToInt);
+                        Console.Write("\n");
                     }
-                    else
+                    if (property.Name == "Password")
                     {
-                        property.SetValue(persona, myValue);
+                        Console.Write("\tDigite la contraseña (solo números del 0 al 9 y letras del abecedario (mayúsculas o minúsculas)): ");
+                        string pass1 = Validators.password();
+                        Console.Write("\nVuelva y digite la contraseña (verificación de igualdad): ");
+                        string pass2 = Validators.password();
+                        if (pass1 == pass2)
+                        {
+                            property.SetValue(persona, pass1);
+                            Console.Write("\nCotraseña exitosa\n");
+                        }
+                        else
+                        {
+                            Console.Error.WriteLine("\nLas contraseñas son diferentes. ");
+                            Console.Write("\nVuelva y digite la contraseña (verificación de igualdad): ");
+                            pass2 = Validators.password();
+                            if (pass1 == pass2)
+                            {
+                                property.SetValue(persona, pass1);
+                                Console.Write("\nCotraseña exitosa\n");
+                            }
+
+
+                            else
+                            {
+                                Console.WriteLine("\nNo logró igualar las contraseñas. Intente mañana");
+                            }
+                        }
+
                     }
+
+                    //else
+                    //{
+                    //    property.SetValue(persona, myValue);
+                    //}
                 }
                 Console.WriteLine("Desea guardar: y/n?");
                 answer = Console.ReadLine();
@@ -324,7 +366,8 @@ namespace Registro
                 AddText(fileStrem, persona.Cedula + ",");
                 AddText(fileStrem, persona.Nombre + ",");
                 AddText(fileStrem, persona.Apellido + ",");
-                AddText(fileStrem, persona.Edad.ToString() + ",\n");
+                AddText(fileStrem, persona.Edad.ToString() + ",");
+                AddText(fileStrem, persona.Password + ",\n");
             }
         }
 
