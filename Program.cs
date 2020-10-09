@@ -3,410 +3,509 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.IO.Pipes;
+using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace Registro
 {
     class Program
     {
-        static string fileName;
-        static Persona persona = new Persona();
+        static string fileName = "Datos.csv";
+        private static CVSManager manager = new CVSManager(fileName);
+        //static Persona persona = new Persona();
         //static bool resultado;
+
         static void Main(string[] args)
         {
-            fileName = "Datos.csv";
+
+            //string fileName;
             //fileName = args[0];
-            ValidateFile(fileName);
+            //ValidateFile(fileName);
             ProgramEngine(true);
         }
 
         private static void ProgramEngine(bool state)
         {
-            string answer;
+            char answer;
             while (state)
             {
-                Console.WriteLine("***************************");
-                Console.WriteLine("Bienvenidos a la Registro_v3");
-                Console.WriteLine("***************************\n");
+                Console.WriteLine("\n\n******************************");
+                Console.WriteLine("Bienvenidos a la Registro_v6");
+                Console.WriteLine("******************************\n");
                 Console.WriteLine("(C)rear");
-                Console.WriteLine("(L)lista");
-                Console.WriteLine("(B)Buscar");
+                Console.WriteLine("(L)ista");
+                Console.WriteLine("(B)uscar");
                 Console.WriteLine("(E)ditar");
                 Console.WriteLine("(D)elete");
                 Console.WriteLine("(S)alir");
                 Console.Write("Introduzca una opcion: ");
-                answer = Console.ReadLine();
-                switch (answer[0])
+                answer = (char)Console.ReadKey().KeyChar;
+                switch (answer)
                 {
                     case 'c':
-                        Create(true);
+                        Create();
                         break;
-                    case 'l':
-                        GetList(true);
+                    case 's':
+                        state = !state;
                         break;
-                    case 'b':
-                        Console.WriteLine("Introduzca cedula de la persona: ");
-                        string cedula = Console.ReadLine();
-                        SearchPerson(true, cedula);
+                    case ('l'):
+                        GetList();
                         break;
                     case 'e':
                         Editar();
                         break;
                     case 'd':
-                        DeletePerson();
-                        break;
-                    case 's':
-                        state = false;
+                        Eliminar();
                         break;
                     default:
-                        while (answer[0] != 'c' && answer[0] != 'l' && answer[0] != 'b' && answer[0] != 'd'
-                            && answer[0] != 's')
-                        {
-                            Console.WriteLine("valor invalido");
-                            Console.Write("Introduzca unan obcion valida: ");
-                            answer = Console.ReadLine();
-                            break;
-                        }
+                        Console.WriteLine("we're bussy here, so se you later:");
+                        state = !state;
                         break;
-                }
 
-
-            }
-
-
-        }
-        private static void Editar()
-        {
-
-            bool resultado;
-            string answer;
-            Console.WriteLine("Introduzca la cédula de la persona que desea editar: ");
-            string cedulaEditar = Console.ReadLine();
-            List<Persona> myList = new List<Persona>();
-            string text = System.IO.File.ReadAllText(fileName);
-            string[] line = text.Split("\n");
-
-            for (int i = 1; i < line.Length - 1; i++)
-            {
-                Persona persona = new Persona();
-                string[] personaValue = line[i].Split(",");
-                persona.Cedula = personaValue[0];
-                persona.Nombre = personaValue[1];
-                persona.Apellido = personaValue[2];
-                persona.Edad = int.Parse(personaValue[3]);
-                myList.Add(persona);
-
-            }
-            int editingIndex = myList.FindIndex(p => p.Cedula == cedulaEditar);
-            persona = myList.Find(p => p.Cedula == cedulaEditar);
-            PropertyInfo[] properties = typeof(Persona).GetProperties();
-            foreach (PropertyInfo property in properties)
-            {
-                Console.Write($"\t{property.Name}: ");
-                string myValue = Console.ReadLine();
-                if (property.Name == "Edad")
-                {
-                    int myValueToInt = int.Parse(myValue);
-                    property.SetValue(persona, myValueToInt);
-                }
-                else
-                {
-                    property.SetValue(persona, myValue);
-                }
-            }
-
-            Console.Write("Desea guardar, y/n? ");
-            answer = Console.ReadLine();
-            resultado = ValidateAnswer(answer, "Desea guardar y/n? ");
-
-            if (resultado)
-            {
-                myList[editingIndex] = persona;
-                using (var fileStream = new FileStream(fileName, FileMode.Create))
-                {
-                    AddText(fileStream, "Cedula,");
-                    AddText(fileStream, "Nombre,");
-                    AddText(fileStream, "Apellido,");
-                    AddText(fileStream, "Edad\n");
-                }
-                foreach (Persona persona in myList)
-                {
-                    SavePersonToCsv(persona);
                 }
             }
         }
-
-        private static void DeletePerson()
+        static void Create()
         {
-            string answer;
             bool state = true;
-            List<Persona> myList = new List<Persona>();
-            string text = System.IO.File.ReadAllText(fileName);
-            string[] line = text.Split("\n");
-            for (int i = 1; i < line.Length - 1; i++)
-            {
-                Persona persona = new Persona();
-                string[] personaValue = line[i].Split(",");
-                persona.Cedula = personaValue[0];
-                persona.Nombre = personaValue[1];
-                persona.Apellido = personaValue[2];
-                persona.Edad = int.Parse(personaValue[3]);
-                myList.Add(persona);
-
-            }
             while (state)
             {
-                Console.Write("Introduzca cédula de la persona que desea borra: ");
-                string cedulaBorrar = Console.ReadLine();
-                if (myList.Exists(p => p.Cedula == cedulaBorrar))
+                Console.Write("\n\n\tCedula: ");
+                string cedula = ValidateCedula();
+                Console.Write("\n\tNombre: ");
+                string nombre = ValidateName();
+                Console.Write("\n\tApellido: ");
+                string apellido = ValidateLastName();
+                Console.Write("\n\tPassword: ");
+                string password1 = ValidatePassword();
+                Console.Write("\n\tConfirme su Contraseña: ");
+                string password2 = ValidatePassword();
+                if (!SamePasswordValidataor(password1, password2))
                 {
-                    persona = myList.Find(p => p.Cedula == cedulaBorrar);
-                    Console.WriteLine("esta seguro que desea borrar a");
-                    Console.WriteLine($"{persona.Cedula}, {persona.Nombre}, {persona.Apellido}, {persona.Edad}");
-                    answer = Console.ReadLine();
-                    if (answer[0] == 'y')
-                    {
-                        myList.Remove(persona);
-                        using (var fileStream = new FileStream(fileName, FileMode.Create))
-                        {
-                            AddText(fileStream, "Cedula,");
-                            AddText(fileStream, "Nombre,");
-                            AddText(fileStream, "Apellido,");
-                            AddText(fileStream, "Edad,\n");
-                        }
-                        foreach (var persona in myList)
-                        {
-                            SavePersonToCsv(persona);
-                        }
-                        Console.WriteLine("Proceso de borrado completado exitosamente");
-                    }
+                    state = false;
+
+                }
+
+                Persona persona = new Persona(cedula, nombre, apellido, password1, ValidateSex(), ValidateEstadoCivil(), GradoAcademico(), Nacionalidad(), Age());
+
+
+                if (ValidateAnswer("\nDesea guardar y/n: ", 'y', 'n')) 
+                {
+                    
+                    manager.Create(persona);
+                    persona.Dispose();
+                }
+                if (ValidateAnswer("\nDesea Salir y/n: ", 'y', 'n'))
+                {
+                    state = false;
                 }
                 else
                 {
-                    Console.WriteLine($"No se encontro {cedulaBorrar}");
-                    Console.WriteLine("Desea volver a intentar y/n");
-                    answer = Console.ReadLine();
-                    state = ValidateAnswer(answer, "Desea continuar y/n?");
+                    state = true;
                 }
+
+
             }
 
         }
 
-        private static void SearchPerson(bool status, string cedula)
+        static void GetList()
         {
-            string answer;
-            List<Persona> myList = new List<Persona>();
-            string text = System.IO.File.ReadAllText(fileName);
-            string[] line = text.Split("\n");
-            for (int i = 1; i < line.Length - 1; i++)
+            List<Persona> personas = manager.GetAll();
+            Console.Write("\n\n\t|Reg.No|Cedular|Nombre|Apellido|Edad|Contraseña");
+
+            for (int i = 0; i < personas.Count(); i++)
             {
-                Persona persona = new Persona();
-                string[] personaValue = line[i].Split(",");
-                persona.Cedula = personaValue[0];
-                persona.Nombre = personaValue[1];
-                persona.Apellido = personaValue[2];
-                persona.Edad = int.Parse(personaValue[3]);
-                myList.Add(persona);
+                int index = i + 1;
+                Console.Write(
+
+                    $"\n\t----------------------------------------------------\n" +
+                 personas[i].ToString());
             }
 
-            while (status)
-            {
-                if (myList.Exists(p => p.Cedula == cedula))
-                {
-                    persona = myList.Find(p => p.Cedula == cedula);
 
-                    Console.WriteLine($"{persona.Cedula}, {persona.Nombre}, {persona.Apellido}, {persona.Edad}");
-                    Console.WriteLine("Desea Continuar y/n");
-                    answer = Console.ReadLine();
-                    status = ValidateAnswer(answer, "Desea Continuar y/n");
+            personas = null;
+        }
+
+        static void Editar()
+        {
+            bool state = true;
+            while (state)
+            {
+                Console.Write("\n\tIntroduzca la cedula de la persona que desea editar: ");
+                string cedula = ValidateCedula();
+                List<Persona> personas = manager.GetAll();
+                var persona = personas.Find(x => x.Cedula == cedula);
+                while (persona == null)
+                {
+                    Console.Write("\n\tNo se pudo encontra a la persona, vuelva a intentar: ");
+                    cedula = ValidateCedula();
+                    persona = personas.Find(x => x.Cedula == cedula);
+                }
+                Console.Write("\n\n\tCedula: ");
+                string Newcedula = ValidateCedula();
+                Console.Write("\n\tNombre: ");
+                string nombre = ValidateName();
+                Console.Write("\n\tApellido: ");
+                string apellido = ValidateLastName();
+                Console.Write("\n\tEdad: ");
+                short edad = ValidateAge();
+                Console.Write("\n\tPassword: ");
+                string password1 = ValidatePassword();
+                int index = personas.IndexOf(persona);
+                personas[index].Cedula = Newcedula;
+                personas[index].Nombre = nombre;
+                personas[index].Apellido = apellido;
+                personas[index].Edad = edad;
+                personas[index].Password = password1;
+                if (ValidateAnswer("\nDesea guardar y/n: ", 'y', 'n'))
+                {
+                    manager.Editar(personas);
+                }
+
+                if (ValidateAnswer("\nDesea Salir y/n: ", 'y', 'n'))
+                {
+                    state = false;
+                }
+                else
+                {
+                    state = true;
+                }
+
+            }
+
+
+        }
+
+        static void Eliminar()
+        {
+            bool state = true;
+            while (state)
+            {
+                Console.Write("\n\tIntroduzca la cedula de la persona que desea Eliminar: ");
+                string cedula = ValidateCedula();
+                List<Persona> personas = manager.GetAll();
+                var persona = personas.Find(x => x.Cedula == cedula);
+                while (persona == null)
+                {
+                    Console.Write("\n\tNo se pudo encontra a la persona, vuelva a intentar: ");
+                    cedula = ValidateCedula();
+                    persona = personas.Find(x => x.Cedula == cedula);
+                }
+                personas.Remove(persona);
+
+                if (ValidateAnswer("\nDesea guardar y/n: ", 'y', 'n'))
+                {
+                    if (personas.Count == 0)
+                    {
+                        manager.Editar(personas);
+                    }
+                    manager.Editar(personas);
+                }
+
+                if (ValidateAnswer("\nDesea Salir y/n: ", 'y', 'n'))
+                {
+                    state = false;
+                }
+                else
+                {
+                    state = true;
+                }
+
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        //Validations
+        static bool ValidateAnswer(string q = "your binary Question y/n", char valueTrue = 'y', char valueFalse = 'n')
+        {
+            Console.Write("\n" + q);
+            char answer = (char)Console.ReadKey().KeyChar;
+
+            while (answer != valueFalse && answer != valueTrue)
+            {
+                Console.WriteLine("Valor Invalido, vuelva a intentar " + Console.Error);
+                Console.Write(q);
+                answer = (char)Console.ReadKey().KeyChar;
+            }
+
+
+            if (answer == valueFalse)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+
+            }
+
+        }
+
+        private static string ValidateName()
+        {
+            List<char> valor = new List<char>();
+            char a;
+            for (int x = 0; ;)
+            {
+                a = Console.ReadKey(true).KeyChar;
+                if (a >= 65 && a <= 122)
+                {
+                    valor.Add(a);
+                    //++x;
+                    Console.Write(a);
+                }
+
+                if (a == 13 && valor.Count >= 1)
+                {
                     break;
-                }
-                else
-                {
-                    Console.WriteLine("La persona no existe");
-                    Console.WriteLine("Desea volver a intentar y/n:");
-                    answer = Console.ReadLine();
-                    if (answer[0] == 'y')
-                    {
-                        Console.Write("Intruzca la cedula: ");
-                        cedula = Console.ReadLine();
-                    }
-                    else
-                    {
-                        status = false;
-                    }
 
                 }
+
+                if (a == 8 && valor.Count >= 1)
+                {
+                    Console.Write("\b \b");
+                    valor.RemoveAt(x);
+                    //--x;
+                }
+
 
             }
 
+            return new string(valor.ToArray());
         }
-
-        private static void GetList(bool state)
+        private static string ValidateCedula()
         {
-            string answer;
-            List<Persona> myList = new List<Persona>();
-            while (state)
+            List<char> valor = new List<char>();
+            char a;
+            for (int x = 0; ;)
             {
-                string text = System.IO.File.ReadAllText(fileName);
-                string[] line = text.Split("\n");
-                for (int i = 1; i < line.Length - 1; i++)
+                a = Console.ReadKey(true).KeyChar;
+                if (a >= 48 && a <= 57)
                 {
-                    Persona persona = new Persona();
-                    string[] personaValue = line[i].Split(",");
-                    persona.Cedula = personaValue[0];
-                    persona.Nombre = personaValue[1];
-                    persona.Apellido = personaValue[2];
-                    persona.Edad = int.Parse(personaValue[3]);
-                    persona.Password = personaValue[4];
-                    myList.Add(persona);
+                    valor.Add(a);
+                    //++x;
+                    Console.Write(a);
                 }
-                Console.WriteLine("Cedula, Nombre, Apellido, Edad, Contraseña");
-                foreach (var persona in myList)
+
+                if (a == 13 && valor.Count >= 1)
                 {
-                    Console.WriteLine($"{persona.Cedula}, {persona.Nombre}, {persona.Apellido}, {persona.Edad}, {persona.Password}");
+                    break;
+
                 }
-                Console.WriteLine("Desea continuar y/n");
-                answer = Console.ReadLine();
-                state = ValidateAnswer(answer, "Desea continuar y/n");
+
+                if (a == 8 && valor.Count >= 1)
+                {
+                    Console.Write("\b \b");
+                    valor.RemoveAt(x);
+                    //--x;
+                }
+
+
             }
 
+            return new string(valor.ToArray());
         }
-
-        private static void Create(bool state)
+        private static string ValidateLastName()
         {
-            while (state)
+            List<char> valor = new List<char>();
+            char a;
+            for (int x = 0; ;)
             {
-                string answer;
-                bool resulato;
-                PropertyInfo[] properties = typeof(Persona).GetProperties();
-                foreach (PropertyInfo property in properties)
+                a = Console.ReadKey(true).KeyChar;
+                if (a >= 65 && a <= 122)
                 {
-                    if (property.Name == "Cedula")
-                    {
-                        Console.Write($"\t{property.Name}: ");
-                        property.SetValue(persona, Validators.cedula());
-                        Console.Write("\n");
-                    }
-                    //string myValue = Console.ReadLine();
-                    if (property.Name == "Nombre")
-                    {
-                        Console.Write($"\t{property.Name}: ");
-                        property.SetValue(persona, Validators.name());
-                        Console.Write("\n");
-                    }
-                    if (property.Name == "Apellido")
-                    {
-                        Console.Write($"\t{property.Name}: ");
-                        property.SetValue(persona, Validators.apellido());
-                        Console.Write("\n");
-                    }
-                    if (property.Name == "Edad")
-                    {
-                        Console.Write($"\t{property.Name}: ");
-                        int myValueToInt = int.Parse(Validators.edad());
-                        property.SetValue(persona, myValueToInt);
-                        Console.Write("\n");
-                    }
-                    if (property.Name == "Password")
-                    {
-                        Console.Write("\tDigite la contraseña (solo números del 0 al 9 y letras del abecedario (mayúsculas o minúsculas)): ");
-                        string pass1 = Validators.password();
-                        Console.Write("\nVuelva y digite la contraseña (verificación de igualdad): ");
-                        string pass2 = Validators.password();
-                        if (pass1 == pass2)
-                        {
-                            property.SetValue(persona, pass1);
-                            Console.Write("\nCotraseña exitosa\n");
-                        }
-                        else
-                        {
-                            Console.Error.WriteLine("\nLas contraseñas son diferentes. ");
-                            Console.Write("\nVuelva y digite la contraseña (verificación de igualdad): ");
-                            pass2 = Validators.password();
-                            if (pass1 == pass2)
-                            {
-                                property.SetValue(persona, pass1);
-                                Console.Write("\nCotraseña exitosa\n");
-                            }
-
-
-                            else
-                            {
-                                Console.WriteLine("\nNo logró igualar las contraseñas. Intente mañana");
-                            }
-                        }
-
-                    }
-
-                    //else
-                    //{
-                    //    property.SetValue(persona, myValue);
-                    //}
+                    valor.Add(a);
+                    //++x;
+                    Console.Write(a);
                 }
-                Console.WriteLine("Desea guardar: y/n?");
-                answer = Console.ReadLine();
-                resulato = ValidateAnswer(answer, "Desea guardar: y/n?");
-                if (resulato)
+
+                if (a == 13 && valor.Count >= 1)
                 {
-                    SavePersonToCsv(persona);
+                    break;
 
                 }
-                Console.WriteLine("Desea continuar... y/n: ");
-                answer = Console.ReadLine();
-                state = ValidateAnswer(answer, "Desea continuar... y/n: ");
+
+                if (a == 8 && valor.Count >= 1)
+                {
+                    Console.Write("\b \b");
+                    valor.RemoveAt(x);
+                    //--x;
+                }
+
+
             }
+
+            return new string(valor.ToArray());
         }
-
-        private static void SavePersonToCsv(Persona persona)
+        private static short ValidateAge()
         {
-            using (var fileStrem = new FileStream(fileName, FileMode.Append))
+            List<char> valor = new List<char>();
+            char a;
+            for (int x = 0; ;)
             {
-                AddText(fileStrem, persona.Cedula + ",");
-                AddText(fileStrem, persona.Nombre + ",");
-                AddText(fileStrem, persona.Apellido + ",");
-                AddText(fileStrem, persona.Edad.ToString() + ",");
-                AddText(fileStrem, persona.Password + ",\n");
+                a = Console.ReadKey(true).KeyChar;
+                if (a >= 48 && a <= 57)
+                {
+                    valor.Add(a);
+                    //++x;
+                    Console.Write(a);
+                }
+
+                if (a == 13 && valor.Count >= 1)
+                {
+                    break;
+
+                }
+
+                if (a == 8 && valor.Count >= 1)
+                {
+                    Console.Write("\b \b");
+                    valor.RemoveAt(x);
+                    //--x;
+                }
+
+
             }
+
+            return Int16.Parse(new string(valor.ToArray()));
         }
-
-        private static bool ValidateAnswer(string answer, string erroHandler)
+        private static string ValidatePassword()
         {
-            while (answer[0] != 'y' && answer[0] != 'n')
+            List<char> valor = new List<char>();
+            char a;
+            for (int x = 0; ;)
             {
-                Console.WriteLine("Valor no valido");
-                Console.WriteLine(erroHandler);
-                answer = Console.ReadLine();
+                a = Console.ReadKey(true).KeyChar;
+                if (a >= 48 && a <= 122)
+                {
+                    valor.Add(a);
+                    //++x;
+                    Console.Write("*");
+                }
+
+                if (a == 13 && valor.Count >= 1)
+                {
+                    break;
+
+                }
+
+                if (a == 8 && valor.Count >= 1)
+                {
+                    Console.Write("\b \b");
+                    valor.RemoveAt(x);
+                    //--x;
+                }
+
+
             }
 
-            if (answer[0] == 'y')
+            return new string(valor.ToArray());
+        }
+        private static bool SamePasswordValidataor(string pass1, string pass2)
+        {
+            if (pass1 == pass2)
             {
+                Console.Write("\n\tContraseña exitosa");
                 return true;
             }
             else
             {
-                return false;
-            }
-        }
-
-        private static void ValidateFile(string fileName)
-        {
-            if (!System.IO.File.Exists(fileName))
-            {
-                Console.WriteLine($"{fileName } no existe pero lo crearemos ;)");
-                using (var fileStream = new FileStream(fileName, FileMode.Append))
+                Console.WriteLine("Contraseña incorrecta, vuelva a intentar");
+                Console.Write("contraseña");
+                pass2 = ValidatePassword();
+                if (pass1 == pass2)
                 {
-                    AddText(fileStream, "Cedula,Nombre,Apellido,Edad\n");
+                    Console.Write("Contraseña exitosa");
+                    return true;
                 }
             }
+            return false;
         }
-
-        private static void AddText(FileStream fs, string value)
+        private static short ValidateSex()
         {
-            byte[] info = new UTF8Encoding(true).GetBytes(value);
-            fs.Write(info, 0, info.Length);
+            if (ValidateAnswer("Sexo (M)asculino/(F)emenino: ", 'm', 'f'))
+            {
+                return (short)(0b1000);
+            }
+            else
+            {
+                return (short)(0);
+            }
         }
+        private static short ValidateEstadoCivil()
+        {
+            if (ValidateAnswer("Estado Civil (C)asado/(S)oltero: ", 'c', 's'))
+            {
+                return (short)(0b0100);
+            }
+            else
+            {
+                return (short)(0);
+            }
+        }
+        private static short GradoAcademico()
+        {
+            if (ValidateAnswer("Grado Academico (G)raduado/(E)studiante ", 'g', 'e'))
+            {
+              
+                return (short)(0b0010);
+            }
+            else
+            {
+                return (short)(0);
+            }
+        }
+        private static short Nacionalidad()
+        {
+            if (ValidateAnswer("Nacionalidad (D)ominicano/(E)xtranjero ", 'd', 'e'))
+            {
+                return (short)(0b0001);
+            }
+            else
+            {
+                return (short)(0);
+            }
+        }
+        private static short Age()
+        {
 
+            Console.Write("\n\tEdad: ");
+            short edad = ValidateAge();
+            //while (edad > 120 || edad < 0)
+            //{
+            //    Console.Write("edad invalida, vuelve a intentar: ");
+            //    edad = ValidateAge();
+            //}
+            return edad;
+        }
     }
+
+
 }
+
+
+
+
+
+
+
+
