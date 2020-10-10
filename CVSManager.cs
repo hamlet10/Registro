@@ -5,17 +5,28 @@ using System.Text;
 
 namespace Registro
 {
-    public  class CVSManager
+    public class CVSManager
     {
-        private readonly string _path;
+        private string _path = "D:\\Hamlet\\Intec\\Registro\\Registro\\bin\\Debug\\netcoreapp3.1\\";
 
         public CVSManager(string path)
         {
-            _path = path;
-           
+            if (path != null)
+            {
+                _path = _path + path;
+            }
+            if (!File.Exists(_path))
+            {
+
+                using (StreamWriter sw = new StreamWriter(_path, true))
+                {
+                    sw.WriteLine("Cedula,Nombre,Apellido,Data");
+                }
+                   
+            
+            }
+
         }
-        
-        
 
 
         //inserta una persona en el csv
@@ -34,7 +45,7 @@ namespace Registro
                 List<Persona> personas = new List<Persona>();
                 string text = sr.ReadToEnd();
                 string[] lines = text.Split("\r\n");
-                for (int i = 0; i < lines.Length - 1; i++)
+                for (int i = 1; i < lines.Length - 1; i++)
                 {
                     string[] items = lines[i].Split(",");
                    

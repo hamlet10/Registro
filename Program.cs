@@ -18,11 +18,9 @@ namespace Registro
         //static bool resultado;
 
         static void Main(string[] args)
-        {
 
-            //string fileName;
-            //fileName = args[0];
-            //ValidateFile(fileName);
+        {
+           
             ProgramEngine(true);
         }
 
@@ -122,7 +120,7 @@ namespace Registro
                 Console.Write(
 
                     $"\n\t----------------------------------------------------\n" +
-                 personas[i].ToString());
+                 index + "|" + personas[i].ToString());
             }
 
 
