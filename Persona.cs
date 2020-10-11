@@ -130,10 +130,10 @@ namespace Registro
         public override string ToString()
         {
 
-            return Cedula + "|" + Nombre + "|" + Apellido + "|" +
+            return  Cedula + "|" + Nombre + "|" + Apellido + "|" +
               "|" + (sex == (0b1000 << 8) ? "masculino" : "femenino") + "|"
               + ((EstadoCivil == (0b0100 << 8)) ? "Casado" : "Soltero") +
-             "|" + ((Grado == (0b0010 << 8)) ? "Graduado" : "Dominicano") + "|" +
+             "|" + ((Grado == (0b0010 << 8)) ? "Graduado" : "Estudiante") + "|" +
              "|" + ((Nacionalidad == (0b001 << 8)) ? "Dominicano" : "Extranjero") + "|"
                + Edad;
 

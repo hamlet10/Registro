@@ -7,23 +7,24 @@ namespace Registro
 {
     public class CVSManager
     {
-        private string _path = "D:\\Hamlet\\Intec\\Registro\\Registro\\bin\\Debug\\netcoreapp3.1\\";
+        /*"D:\\Hamlet\\Intec\\Registro\\Registro"*/
+        private string _path =  Directory.GetCurrentDirectory();
 
         public CVSManager(string path)
         {
             if (path != null)
             {
-                _path = _path + path;
+                _path = _path + "\\" + path;
             }
             if (!File.Exists(_path))
             {
-
+                Console.WriteLine($"{path} NO EXISTE... pero lo crearemos por ti ;)");
                 using (StreamWriter sw = new StreamWriter(_path, true))
                 {
                     sw.WriteLine("Cedula,Nombre,Apellido,Data");
                 }
-                   
-            
+
+
             }
 
         }
@@ -38,9 +39,9 @@ namespace Registro
             }
         }
 
-        public List<Persona>  GetAll()
+        public List<Persona> GetAll()
         {
-            using(StreamReader sr = new StreamReader(_path))
+            using (StreamReader sr = new StreamReader(_path))
             {
                 List<Persona> personas = new List<Persona>();
                 string text = sr.ReadToEnd();
@@ -48,12 +49,12 @@ namespace Registro
                 for (int i = 1; i < lines.Length - 1; i++)
                 {
                     string[] items = lines[i].Split(",");
-                   
+
                     //cedula   nombre    apellido  password  
-                    Persona persona = new Persona(items[0] , items[1], items[2], items[3],short.Parse(items[4]));
+                    Persona persona = new Persona(items[0], items[1], items[2], items[3], short.Parse(items[4]));
 
                     personas.Add(persona);
-                    
+
                 }
 
                 return personas;
@@ -63,18 +64,16 @@ namespace Registro
 
         public void Editar(List<Persona> personas)
         {
-            if(personas.Count == 0)
+
+            using (StreamWriter sw = new StreamWriter(_path, false))
             {
-                using (StreamWriter sw = new StreamWriter(_path, false))
-                {
-                    sw.WriteLine("Cedula,Nombre,Apellido,Edad,Contraseña\n");
-                }
+                sw.WriteLine("Cedula,Nombre,Apellido,Data");
             }
             foreach (var persona in personas)
             {
-                using (StreamWriter sw = new StreamWriter(_path, false))
+                using (StreamWriter sw = new StreamWriter(_path, true))
                 {
-                    sw.WriteLine($"{persona.Cedula},{persona.Nombre},{persona.Apellido},{persona.Edad},{persona.Password}");
+                    sw.WriteLine($"{persona.Cedula},{persona.Nombre},{persona.Apellido},{persona.Password},{persona.GetData()}");
                 }
             }
         }

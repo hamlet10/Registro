@@ -12,14 +12,15 @@ namespace Registro
 {
     class Program
     {
-        static string fileName = "Datos.csv";
-        private static CVSManager manager = new CVSManager(fileName);
+  
+        private static CVSManager manager;
         //static Persona persona = new Persona();
         //static bool resultado;
 
         static void Main(string[] args)
 
         {
+            manager = new CVSManager(args[0]);
            
             ProgramEngine(true);
         }
@@ -54,6 +55,9 @@ namespace Registro
                     case 'e':
                         Editar();
                         break;
+                    case 'b':
+                        Buscar();
+                        break;
                     case 'd':
                         Eliminar();
                         break;
@@ -65,6 +69,37 @@ namespace Registro
                 }
             }
         }
+
+        private static void Buscar()
+        {
+            bool state = true;
+            List<Persona> personas = manager.GetAll();
+            while (state)
+            {
+                Console.Write("\n\n\tIndroduzca cedula que desea buscar: ");
+                string bCedula = ValidateCedula();
+                Persona persona = personas.Find(c => c.Cedula == bCedula);
+                if (persona != null)
+                {
+                    Console.Write("\n\n\t|-----------------------------------------------------------|");
+                    Console.Write("\n\t|Cedular|Nombre|Apellido|Sexo|EstoCivil|Grado|Nacionalidad|Edad|");
+                    Console.Write($"\n\t|{persona}|");
+
+                }
+                else {
+
+                    Console.Write("\n\tNO SE ENCONTRO PERSONA");
+                }
+                state = ValidateAnswer("\n\tContinuar? ", 'y', 'n');
+            }
+            
+           
+            
+
+            
+          
+        }
+
         static void Create()
         {
             bool state = true;
@@ -112,14 +147,14 @@ namespace Registro
         static void GetList()
         {
             List<Persona> personas = manager.GetAll();
-            Console.Write("\n\n\t|Reg.No|Cedular|Nombre|Apellido|Edad|Contraseña");
+            Console.Write("\n\n\t|Reg.No|Cedular|Nombre|Apellido|Sexo|EstoCivil|Grado|Nacionalidad");
 
             for (int i = 0; i < personas.Count(); i++)
             {
                 int index = i + 1;
                 Console.Write(
 
-                    $"\n\t----------------------------------------------------\n" +
+                    $"\n\t----------------------------------------------------------\n" + "\t"+
                  index + "|" + personas[i].ToString());
             }
 
@@ -180,26 +215,23 @@ namespace Registro
         static void Eliminar()
         {
             bool state = true;
+            List<Persona> personas = manager.GetAll();
             while (state)
             {
                 Console.Write("\n\tIntroduzca la cedula de la persona que desea Eliminar: ");
                 string cedula = ValidateCedula();
-                List<Persona> personas = manager.GetAll();
-                var persona = personas.Find(x => x.Cedula == cedula);
+                Persona persona = personas.Find(p => p.Cedula == cedula);
                 while (persona == null)
                 {
                     Console.Write("\n\tNo se pudo encontra a la persona, vuelva a intentar: ");
                     cedula = ValidateCedula();
-                    persona = personas.Find(x => x.Cedula == cedula);
+                    
                 }
-                personas.Remove(persona);
+                int personIndex = personas.IndexOf(persona);
 
                 if (ValidateAnswer("\nDesea guardar y/n: ", 'y', 'n'))
                 {
-                    if (personas.Count == 0)
-                    {
-                        manager.Editar(personas);
-                    }
+                    personas.RemoveAt(personIndex);
                     manager.Editar(personas);
                 }
 
@@ -488,11 +520,11 @@ namespace Registro
 
             Console.Write("\n\tEdad: ");
             short edad = ValidateAge();
-            //while (edad > 120 || edad < 0)
-            //{
-            //    Console.Write("edad invalida, vuelve a intentar: ");
-            //    edad = ValidateAge();
-            //}
+            while (edad > 120 || edad < 0)
+            {
+                Console.Write("edad invalida, vuelve a intentar: ");
+                edad = ValidateAge();
+            }
             return edad;
         }
     }
