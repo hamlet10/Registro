@@ -127,6 +127,8 @@ namespace Registro
             return Apellido[0].GetHashCode();
         }
 
+       
+
         public override string ToString()
         {
 

@@ -33,6 +33,7 @@ namespace Registro
         //inserta una persona en el csv
         public void Create(Persona persona)
         {
+            
             using (StreamWriter sw = new StreamWriter(_path, true))
             {
                 sw.WriteLine($"{persona.Cedula},{persona.Nombre},{persona.Apellido},{persona.Password},{persona.GetData()}");

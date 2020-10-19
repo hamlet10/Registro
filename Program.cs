@@ -31,7 +31,7 @@ namespace Registro
             while (state)
             {
                 Console.WriteLine("\n\n******************************");
-                Console.WriteLine("Bienvenidos a la Registro_v6");
+                Console.WriteLine("Bienvenidos a la Registro_v7");
                 Console.WriteLine("******************************\n");
                 Console.WriteLine("(C)rear");
                 Console.WriteLine("(L)ista");
